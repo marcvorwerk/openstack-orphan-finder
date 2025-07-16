@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "openstack-orphan-finder"
+version = "0.1.0"
+description = "Tool to identify orphan openstack resources"
+authors = ["Marc Vorwerk <marc+github@marc-vorwerk.de>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "orphan_finder", from = "src" }]
+
+[tool.poetry.scripts]
+orphan-finder = "orphan_finder.cli:app"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+openstacksdk = "^4"
+typer = "^0.16"
+pyyaml = "^6.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+ruff = "^0.4.0"
+black = "^24.0"
+mypy = "^1.9"
+pre-commit = "^3.7"
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "B", "I"]
+fix = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
