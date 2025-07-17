@@ -1,11 +1,12 @@
 import openstack
+
 from orphan_finder.resources import (
+    networks,
+    ports,
+    routers,
+    security_groups,
     servers,
     volumes,
-    networks,
-    routers,
-    ports,
-    security_groups,
 )
 
 RESOURCE_MODULES = {
@@ -26,7 +27,9 @@ def get_existing_project_ids(conn) -> set[str]:
     return {project.id for project in conn.identity.projects()}
 
 
-def find_all_orphans(project_id: str | None = None, only_resources: list[str] | None = None) -> list[dict]:
+def find_all_orphans(
+    project_id: str | None = None, only_resources: list[str] | None = None
+) -> list[dict]:
     conn = create_connection()
     existing_projects = get_existing_project_ids(conn)
 
@@ -36,11 +39,16 @@ def find_all_orphans(project_id: str | None = None, only_resources: list[str] | 
 
     result = []
     for name, mod in modules.items():
-        result += mod.find_orphans(conn, existing_projects, filter_project_id=project_id)
+        result += mod.find_orphans(
+            conn, existing_projects, filter_project_id=project_id
+        )
     return result
 
 
-def collect_stats(only_resources: list[str] | None = None) -> dict:
+def collect_stats(
+    project_id: str | None = None,
+    only_resources: list[str] | None = None,
+) -> dict:
     conn = create_connection()
     existing_projects = get_existing_project_ids(conn)
 
@@ -51,12 +59,25 @@ def collect_stats(only_resources: list[str] | None = None) -> dict:
     stats = {}
     for name, mod in modules.items():
         all_resources = mod.get_all(conn)
-        orphan_count = sum(1 for r in all_resources if r.get("project_id") not in existing_projects)
+        filtered_resources = (
+            [r for r in all_resources if r.get("project_id") == project_id]
+            if project_id
+            else all_resources
+        )
+
+        orphans = mod.find_orphans(
+            conn,
+            existing_projects,
+            filter_project_id=project_id,
+        )
+
         stats[name] = {
-            "total": len(all_resources),
-            "orphans": orphan_count,
+            "total": len(filtered_resources),
+            "orphans": len(orphans),
         }
+
     return stats
+
 
 # Funktion nicht vollstaendig, da wir keine Abhaenigkeiten wie z.B. Subnetze pruefen
 def delete_resource(conn, res: dict):
@@ -79,16 +100,14 @@ def delete_resource(conn, res: dict):
         raise ValueError(f"Unknown resource typ: {typ}")
 
 
-def delete_orphans(
-    conn,
-    resources: list[dict],
-    require_confirmation: bool = True
-):
+def delete_orphans(conn, resources: list[dict], require_confirmation: bool = True):
     deleted = []
 
     for res in resources:
         if require_confirmation:
-            confirm = input(f"Delete {res['resource_type']} '{res['name']}' ({res['id']})? [y/N]: ")
+            confirm = input(
+                f"Delete {res['resource_type']} '{res['name']}' ({res['id']})? [y/N]: "
+            )
             if confirm.lower() != "y":
                 continue
 
@@ -99,4 +118,3 @@ def delete_orphans(
             print(f"❌ Error during delete of {res['id']}: {e}")
 
     return deleted
-

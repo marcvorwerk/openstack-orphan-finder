@@ -1,15 +1,37 @@
+from typing import List, Optional
+
 import typer
-from typing import Optional, List
-from orphan_finder.core import find_all_orphans, collect_stats, RESOURCE_MODULES
-from orphan_finder.report import print_json, print_yaml, print_markdown
+
+from orphan_finder.core import (
+    RESOURCE_MODULES,
+    collect_stats,
+    create_connection,
+    find_all_orphans,
+    get_existing_project_ids,
+)
+from orphan_finder.report import print_json, print_markdown, print_yaml
 
 app = typer.Typer(help="OpenStack Orphan Resource Finder")
 
+
 @app.command()
 def find(
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="Search by Project ID"),
-    resource: Optional[List[str]] = typer.Option(None, "--resource", "-r", help=f"Limit to given Resource. Available: {', '.join(RESOURCE_MODULES.keys())}"),
-    output: str = typer.Option("markdown", "--output", "-o", help="Output format: markdown (default), json, yaml", case_sensitive=False),
+    project: Optional[str] = typer.Option(
+        None, "--project", "-p", help="Search by Project ID"
+    ),
+    resource: Optional[List[str]] = typer.Option(
+        None,
+        "--resource",
+        "-r",
+        help=f"Limit to given Resource. Available: {', '.join(RESOURCE_MODULES.keys())}",
+    ),
+    output: str = typer.Option(
+        "markdown",
+        "--output",
+        "-o",
+        help="Output format: markdown (default), json, yaml",
+        case_sensitive=False,
+    ),
 ):
     """Search orphan resources"""
     if resource:
@@ -32,7 +54,9 @@ def find(
 
 @app.command()
 def stats(
-    resource: Optional[List[str]] = typer.Option(None, "--resource", "-r", help="Limit to given resource type")
+    resource: Optional[List[str]] = typer.Option(
+        None, "--resource", "-r", help="Limit to given resource type"
+    )
 ):
     """Show statistics of all resources and their orphan share"""
     stats = collect_stats(only_resources=resource)
@@ -40,9 +64,9 @@ def stats(
     total = sum(x["total"] for x in stats.values())
     total_orphans = sum(x["orphans"] for x in stats.values())
 
-    print(f"# Resource Statistic\n")
-    print(f"| Resource Typ     | Total | Orphan |")
-    print(f"|------------------|-------|--------|")
+    print("# Resource Statistic\n")
+    print("| Resource Typ     | Total | Orphan |")
+    print("|------------------|-------|--------|")
 
     for res, data in stats.items():
         print(f"| {res.capitalize():<17} | {data['total']:>6} | {data['orphans']:>8} |")
@@ -52,10 +76,18 @@ def stats(
 
 @app.command()
 def delete(
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="Limit to project ID"),
-    resource: Optional[List[str]] = typer.Option(None, "--resource", "-r", help="Limit to given resource type"),
-    force: bool = typer.Option(False, "--force", help="Delete without project limitation (⚠️)"),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Automatically approve all delete requests"),
+    project: Optional[str] = typer.Option(
+        None, "--project", "-p", help="Limit to project ID"
+    ),
+    resource: Optional[List[str]] = typer.Option(
+        None, "--resource", "-r", help="Limit to given resource type"
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Delete without project limitation (⚠️)"
+    ),
+    yes: bool = typer.Option(
+        False, "--yes", "-y", help="Automatically approve all delete requests"
+    ),
 ):
     """Delete orphan resources"""
     if not project and not force:
@@ -71,10 +103,7 @@ def delete(
     conn = create_connection()
     existing_projects = get_existing_project_ids(conn)
 
-    orphans = find_all_orphans(
-        project_id=project,
-        only_resources=resource
-    )
+    orphans = find_all_orphans(project_id=project, only_resources=resource)
 
     if not orphans:
         typer.echo("✅ No orphan resource found.")
@@ -89,6 +118,7 @@ def delete(
             raise typer.Exit()
 
     from orphan_finder.core import delete_orphans
+
     deleted = delete_orphans(conn, orphans, require_confirmation=not yes)
 
     typer.echo(f"✅ {len(deleted)} resources deleted.")

@@ -1,13 +1,19 @@
 import json
+from typing import Any, Dict, List
+
 import yaml
-from typing import List, Dict, Any
 
 
 def print_json(resources: List[Dict[str, Any]]) -> None:
-    print(json.dumps({
-        "orphan_resources": resources,
-        "total": len(resources),
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "orphan_resources": resources,
+                "total": len(resources),
+            },
+            indent=2,
+        )
+    )
 
 
 def print_yaml(resources: List[Dict[str, Any]]) -> None:
@@ -36,4 +42,3 @@ def print_markdown(resources: List[Dict[str, Any]]) -> None:
         for res in entries:
             print(f"| `{res['id']}` | {res['name']} | `{res['project_id']}` |")
         print()
-

@@ -16,7 +16,7 @@ CLI tool to find, list, and optionally delete orphaned OpenStack resources (serv
 
 ## ⚙️ Requirements
 
-- Python ≥ 3.10  
+- Python ≥ 3.10
 - OpenStack clouds.yaml or env var (`OS_CLOUD`)
 
 ---
