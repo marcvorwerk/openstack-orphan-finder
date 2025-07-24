@@ -2,20 +2,26 @@ import openstack
 
 from orphan_finder.resources import (
     networks,
+    subnets,
     ports,
     routers,
     security_groups,
+    loadbalancer,
     servers,
     volumes,
+    floating_ips
 )
 
 RESOURCE_MODULES = {
     "servers": servers,
     "volumes": volumes,
     "networks": networks,
+    "subnets": subnets,
     "routers": routers,
     "ports": ports,
+    "floating_ips": floating_ips,
     "security_groups": security_groups,
+    "loadbalancer": loadbalancer
 }
 
 
@@ -80,6 +86,7 @@ def collect_stats(
 
 
 # Funktion nicht vollstaendig, da wir keine Abhaenigkeiten wie z.B. Subnetze pruefen
+# sollten das eh in die resoources auslagern
 def delete_resource(conn, res: dict):
     typ = res["resource_type"]
     rid = res["id"]
